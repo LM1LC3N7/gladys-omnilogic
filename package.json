@@ -1,6 +1,6 @@
 {
   "name": "gladys-omnilogic",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "private": true,
   "description": "Gladys Assistant external integration for Hayward OmniLogic pool controllers, over their local UDP protocol (port 10444). Unofficial, not affiliated with Hayward.",
   "type": "module",

@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-10-31
+
 ### Added
 
 - Hayward OmniLogic pool controllers read over their local protocol (UDP port
@@ -29,3 +31,6 @@ the notes of the version's GitHub Release.
   the set point the controller holds is above the bounds or unreadable.
 - A fire pit relay is never turned on; turning it off works.
 - "Test the connection" button, docs in English and French.
+
+[Unreleased]: https://github.com/LM1LC3N7/gladys-omnilogic/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/LM1LC3N7/gladys-omnilogic/releases/tag/v0.1.1
