@@ -129,7 +129,14 @@ export function parseConfig(text) {
       const id = systemIdOf(childText(node, 'System-Id'));
       const relayType = childText(node, 'Type');
       if (id === undefined || VALVE_TYPES.has(relayType)) continue;
-      add({ key: keyOf(bow, id), bow, id, type: 'RELAY', name: named(node), config: {} });
+      add({
+        key: keyOf(bow, id),
+        bow,
+        id,
+        type: 'RELAY',
+        name: named(node),
+        config: { function: childText(node, 'Function') },
+      });
     }
     for (const node of childrenNamed(parent, 'ColorLogic-Light')) {
       const id = systemIdOf(childText(node, 'System-Id'));
@@ -285,10 +292,12 @@ const FILTER_STATUS = new Map([
   [8, ON],
   [9, ON],
   [10, ON],
-  // Waiting to turn off, heater extend, cool-down, waiting for the pump: running down.
+  // Waiting to turn off, cool-down, waiting for the pump: running down.
+  // Heater extend: kept running for the heater to reach its set point (the
+  // reference's `is_on`): on.
+  [5, ON],
   [3, 'STOPPING'],
   [4, 'STOPPING'],
-  [5, 'STOPPING'],
   [6, 'STOPPING'],
   [11, 'STOPPING'],
 ]);
@@ -498,6 +507,25 @@ export function setpointToWrite(celsius, heaterConfig, ceilingC) {
     return { low: lowC, high: highC };
   }
   return { value, celsius: round2(back) };
+}
+
+/**
+ * Whether the set point a heater already holds (written by the Hayward app,
+ * the screen, a schedule) may be resumed by turning heating on: undefined
+ * when it may, else why not: `{ unreadable: true }` (no set point, or no
+ * limits of the heater), or `{ above: °C held, ceiling: °C }` when the whole
+ * °F held is above the highest one Gladys may write (the same bound as a
+ * write: the heater's maximum, 104 °F, the ceiling in °F rounded down).
+ */
+export function heldSetpointProblem(heater, ceilingC) {
+  const held = integerOf(heater?.values?.SETPOINT);
+  const maxF = heater?.config?.maxF;
+  if (held === undefined || !Number.isInteger(maxF)) return { unreadable: true };
+  const ceiling = Math.min(ceilingC, SETPOINT.spaMaxC);
+  const highF = Math.min(SETPOINT.maxF, maxF, Math.floor((ceiling * 9) / 5 + 32));
+  if (held > highF)
+    return { above: round2(((held - 32) * 5) / 9), ceiling: round2(((highF - 32) * 5) / 9) };
+  return undefined;
 }
 
 /**

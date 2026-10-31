@@ -16,7 +16,6 @@
 //     water, equipment, names, limits);
 //   - RequestTelemetryData (300): the states;
 //   - SetUIEquipmentCmd (164): a filter, pump, relay or light on or off;
-//   - RunGroupCmd (317): a group (theme) on or off;
 //   - SetHeaterEnable (147): a heater on or off;
 //   - SetUIHeaterCmd (11): the heating set point, in °F.
 // Every temperature of the protocol is in °F, whatever the display unit of
@@ -38,7 +37,6 @@ export const MSG = {
   SET_HEATER_ENABLE: 147,
   SET_EQUIPMENT: 164,
   GET_TELEMETRY: 300,
-  RUN_GROUP: 317,
   MSP_ACK: 1002,
   MSP_CONFIGURATIONUPDATE: 1003,
   MSP_TELEMETRY_UPDATE: 1004,
@@ -87,13 +85,12 @@ export const SELECT_VALUES = { on: 'on', off: 'off' };
 
 /**
  * What a stop writes (the `attr` kept in /data, frozen): an equipment off
- * (SetUIEquipmentCmd isOn 0), a group off (RunGroupCmd 0), a heater off
+ * (SetUIEquipmentCmd isOn 0), a heater off
  * (SetHeaterEnable 0). Each is confirmed by the telemetry: STATUS "OFF", or
  * ENABLE "0" with no heater of the body seen heating.
  */
 export const STOP_ATTRS = {
   EQUIPMENT: 'STATUS',
-  GROUP: 'GROUP',
   HEATER: 'ENABLE',
 };
 export const OFF = 'OFF';
@@ -157,8 +154,12 @@ export const SYSTEM_ID = /^(?:0|[1-9]\d{0,4})$/;
 export const OBJ_KEY = /^(?:0|[1-9]\d{0,4})_(?:0|[1-9]\d{0,4})$/;
 
 export const TIMINGS = {
-  /** An ack awaited this long before the request is sent again (a new message id). */
-  ackWait: 800,
+  /**
+   * An ack awaited this long before the request is sent again (a new message
+   * id): the reference waits 4 s (0.5 s was "a tad too short"); 1.5 s leaves
+   * a second try within the 3.5 s of a command.
+   */
+  ackWait: 1_500,
   /** One request of the polling, the answer included (the configuration may be long). */
   readTimeout: 8 * SECOND,
   /** Between two blocks of a long answer, at most this long. */

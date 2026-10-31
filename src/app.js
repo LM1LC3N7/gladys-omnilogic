@@ -74,6 +74,7 @@ import { ERRORS, T, age, join, word } from './i18n.js';
 import { ERROR_KINDS, PanelClient, PanelError, errorReason } from './omni/client.js';
 import {
   ceilingOf,
+  heldSetpointProblem,
   mergeObjects,
   onSpeedOf,
   parseConfig,
@@ -947,6 +948,12 @@ export class OmniLogicApp {
       ['FILTER', 'PUMP', 'RELAY', 'LIGHT', 'HEATER'].includes(o.type),
     ).length;
     let summary = T.summary({ name: deviceName(p), equipment, service: p.service });
+    for (const heater of shownObjects(p.objects).filter((o) => o.type === 'HEATER')) {
+      const body = p.objects.get(`${heater.bow}_${heater.bow}`);
+      if (heldSetpointProblem(heater, ceilingOf(body, this.config.poolCeiling))?.above) {
+        summary = join(summary, T.heldNote(objectName(heater, heater.key, this.config.language)));
+      }
+    }
     const off = this.optionsOff();
     if (off.length > 0) {
       summary = join(summary, T.commandsOff(off));
@@ -1148,8 +1155,8 @@ export class OmniLogicApp {
   /** Reads the controller now if the interval allows it, else the last status (never sooner). */
   async testConnection() {
     if (this.guards.size > 0) {
-      // Stops kept (not acked, not applied): checked and written again first, now.
-      for (const g of this.guards.values()) g.nextTryAt = -Infinity;
+      // Stops kept: checked now; those never acked are written again at once,
+      // the others at their own pace (15 s after a write, never sooner).
       this.armStopCheck(0);
     }
     if (!this.config.address) {
@@ -1353,6 +1360,10 @@ export class OmniLogicApp {
       if (!['FILTER', 'PUMP', 'RELAY', 'LIGHT'].includes(object?.type) || !object.values.STATUS) {
         return { refuse: ERRORS.unknownObject };
       }
+      if (object.type === 'RELAY' && object.config.function === 'RLY_FIREPIT') {
+        // A gas fire pit: never lit from Gladys in this version (turning it off works).
+        return { refuse: ERRORS.firePit };
+      }
       let heats = false;
       if (object.type === 'FILTER') {
         // Its body circulates, and the heater of the body may start unless seen off.
@@ -1361,6 +1372,9 @@ export class OmniLogicApp {
           return { refuse: ERRORS.stopInProgress };
         }
         heats = mayHeat(heater) && Boolean(heater);
+        // Its heater may resume the set point it holds: bounded like a write.
+        const held = heats ? this.heldProblem(heater, objects) : undefined;
+        if (held) return { refuse: held };
       }
       const options = this.optionsFor(entry, object, heats);
       const refused = this.admit(entry, options);
@@ -1397,6 +1411,9 @@ export class OmniLogicApp {
       ) {
         return { skip: true };
       }
+      // Heating resumes the set point the controller holds: bounded like a write.
+      const held = this.heldProblem(object, objects);
+      if (held) return { refuse: held };
       return {
         write: {
           value: entry.wanted,
@@ -1432,6 +1449,16 @@ export class OmniLogicApp {
         request: () => REQUESTS.setpoint(object.bow, object.id, target.value),
       },
     };
+  }
+
+  /** Why the set point a heater holds may not be resumed (an error text), else undefined. */
+  heldProblem(heater, objects) {
+    const body = objects.get(`${heater.bow}_${heater.bow}`);
+    const problem = heldSetpointProblem(heater, ceilingOf(body, this.config.poolCeiling));
+    if (!problem) return undefined;
+    return problem.unreadable
+      ? ERRORS.heldUnreadable
+      : ERRORS.heldAbove(problem.above, problem.ceiling);
   }
 
   /**
@@ -1514,8 +1541,9 @@ export class OmniLogicApp {
       // The identity read again: the configuration known and this telemetry agree.
       if (!sameController(p.config, p.checksum, telemetry)) {
         for (const entry of live) this.finishWith(entry, ERRORS.otherPanel);
-        // The configuration is read again at the next read.
+        // The configuration is read again, at the follow-up read (5 s).
         p.checksum = undefined;
+        this.followUp();
         return;
       }
       objects = mergeObjects(p.config, telemetry);

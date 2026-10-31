@@ -80,8 +80,9 @@ answer says why, and the stop is kept (in `/data`) and checked every 15 s
   soon as an address is known;
 - **no ack from the controller** (3 s of tries, every 250 ms): written again
   at every check (15 s), at every read that reaches the controller and when
-  you click **Test the connection**; a stop the controller never acked is
-  never held nor given up;
+  you click **Test the connection** (the button writes again only the stops
+  never acked; the others keep their 15 s); a stop the controller never
+  acked is never held nor given up;
 - **acked, not applied** (the telemetry does not show it): written again
   15 s after each write, 3 times at most (writes the controller acked), then
   held without new writes, which the status of the integration says;
@@ -110,17 +111,22 @@ Three options, **off by default**:
 
 - **Allow turning pumps and relays on**: filter pumps (at their last speed
   when it is within their limits, else their maximum, as the Hayward app),
-  other pumps and relays. Valves are never driven. Turning on a filter pump
-  whose heater is not seen off (heater on, or a heater unit still on, or
-  unreadable) also needs the heating option: the water flowing may start
-  the heating.
+  other pumps and relays. Valves are never driven, and a fire pit relay
+  (`RLY_FIREPIT`) is never lit (turning it off works). Turning on a filter
+  pump whose heater is not seen off (heater on, or a heater unit still on, or
+  unreadable) also needs the heating option, and the set point that heater
+  holds must be within the bounds below (else refused: lower it first): the
+  water flowing may start the heating.
 - **Allow turning lights on** (ColorLogic lights, at their last show).
 - **Allow heating**: turning a heater on, setting its set point. The value
   written is a whole °F within the protocol's 65–104 °F, within the limits
   of the heater read in its configuration (never written when they cannot be
   read), a **spa at most 40 °C** (104 °F), a pool at most the ceiling of the
   configuration (35 °C by default, 20 to 40 °C, converted to °F rounded
-  down).
+  down). Turning a heater on resumes the set point the controller holds
+  (left by the Hayward app, the screen or a schedule): it is refused when
+  that set point is above these bounds or cannot be read, and the status of
+  the integration says so; lower the set point first.
 
 They are lists and a set point, never a switch: a "turn everything off"
 never reaches them. Each command reads the telemetry again right before
@@ -130,10 +136,19 @@ when the telemetry read back shows the value asked ("sent, not applied yet"
 otherwise, then reads at 5 and 20 s). Commands arriving together (a scene)
 go one after the other in one turn. Also refused: before the configuration
 of the integration or of the controller is read, when another controller
-answers at the address or its configuration changed, when the controller is
-in service or configuration mode, or when a stop was clicked meanwhile.
+answers at the address or its configuration changed (both read again 5 s
+later), when the controller is in service or configuration mode, or when a
+stop was clicked meanwhile.
 
 ## Good to know
+
+- Turning a filter pump off leaves its heater enabled, as the Hayward app
+  does: the controller itself stops the heating without flow (cool-down,
+  minimum speed of the heater), and the heating resumes when a schedule
+  starts the pump again. Turn the heater off too to stop heating for good.
+- An ack is awaited 1.5 s before a request is sent again (the reference
+  waits 4 s): on a controller slower than that, a scene of several settings
+  may leave some of them unsent ("nothing sent", never sent late).
 
 - The controller is never read sooner than the interval: not by the **Test
   the connection** button, a Discovery, a reconnection to Gladys or a

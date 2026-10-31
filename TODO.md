@@ -48,8 +48,38 @@ up to date at the end of every milestone.
 - The filter states during a stop (3, 4, 6, 11 read as "running down"), the
   freeze protection (a stop not applied while it runs: held after 4 writes).
 - Is the telemetry ever split into a lead and blocks, and with which flag?
+- The ack delay of a real controller (the reference waits 4 s, says 0.5 s
+  was too short; the module waits 1.5 s, a second try within a command's
+  3.5 s): a slower controller loses settings of a scene ("nothing sent").
+- Filter state 5 (heater extend): read as on; does a stop of the pump end it,
+  or does the controller keep the pump on until the heater is satisfied?
 
 ## Decisions
+
+- **Review r1 (2026-10-31)**: I1 turning a heater on, or a filter pump whose
+  heater may heat, resumes the set point the controller holds: refused when
+  it is unreadable (or the heater's limits are) or above the highest whole
+  °F Gladys may write (heater maximum, 104 °F, the ceiling rounded down),
+  said in the answer and in the status. I2 tests for the lane priority (M8),
+  a heater unit on (M49), an unreadable heater (M48), a command taking the
+  line from a check (M51), the stop retried within 3 s (M52), the XML
+  element bound (M44), /data never through a link (M32). m1 filter state 5
+  (heater extend) is on, as the reference. m2 "Test the connection" only
+  checks the stops at once: those never acked are written again, the others
+  keep their 15 s and count no resend. m3 an identity refusal arms the
+  follow-up reads (5 s, 20 s), which read the configuration again. m4 ack
+  wait 1.5 s (was 0.8 s; the reference waits 4 s). m5 RunGroupCmd removed
+  until groups come. m6 a fire pit relay (`RLY_FIREPIT`) is never turned on;
+  the docs say a stopped filter pump leaves its heater enabled (the
+  controller cuts the heating without flow). The same held set point gap
+  exists in gladys-intellicenter (MODE without a check of LOTMP): to be
+  reported to Louis.
+  The reviewer's 65 mutants replayed one at a time in a private clone: all
+  killed but M31 (`isFile`), M46 and M47 (equivalent, as r1 says) and M33
+  (hangs: detected); M34/M35 run on each of their two occurrences (the
+  write and the held set point), all killed. Scenarios s1-s11 replayed: all
+  pass but s10-c at 900 ms per ack (3 of 5 settings set, 2 "nothing sent":
+  the 3.5 s budget, said in the docs).
 
 - **Version 0.1.0 set by hand** in `package.json`, `package-lock.json`, the
   manifest and the `docker_image` tag
@@ -80,12 +110,12 @@ up to date at the end of every milestone.
   write was acked too: a stop never acked is written again at every check,
   without end, never held. Acked without effect: 3 resends, then held until
   a new click, the telemetry showing it, or a newer command of the setting
-  that left. "Running down" (filter states 3, 4, 5, 6, 11; light 1, 7; a
+  that left. "Running down" (filter states 3, 4, 6, 11; light 1, 7; a
   heater unit still on after its heater shows off) is watched, not
   rewritten; said "check on the controller" after 10 minutes. Without the
   configuration, the heater units are unknown: the heater stop stays
-  watched until the configuration is read. "Test the connection" writes
-  every kept stop again at once.
+  watched until the configuration is read. "Test the connection" checks the
+  kept stops at once (only those never acked are written again).
 - **Commands batched**: commands arriving within 30 ms go in one turn of the
   line, after one fresh telemetry, one datagram each, then one read back;
   only the last command of a setting in a batch is planned (the earlier

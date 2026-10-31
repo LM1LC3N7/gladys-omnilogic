@@ -378,16 +378,18 @@ test('a command still in its gathering when a stop is clicked is answered at onc
   assert.equal(t.panel.sets().filter((r) => r.params.isOn === 1).length, 0);
 });
 
-test('"Test the connection" writes an acked stop not applied again at once, before its check', async () => {
+test('"Test the connection" never rewrites an acked stop before 15 s nor counts a resend', async () => {
   const t = await setup({ config: CFG });
   relay(t).state = 1;
   t.panel.ignoreSet = true;
   refused(await t.press('onoff-0_27', 'off', 4400), /pas encore appliqué/);
-  t.panel.ignoreSet = false;
-  const answer = t.app.testConnection();
-  await t.advance(2 * SECOND, 20);
-  await answer;
-  assert.equal(relay(t).state, 0, 'written again before the 15 s check');
+  for (let k = 0; k < 3; k += 1) {
+    const answer = t.app.testConnection();
+    await t.advance(2 * SECOND, 20);
+    await answer;
+  }
+  assert.equal(t.panel.sets().length, 1, 'no write sooner than 15 s after the last one');
+  assert.equal([...t.app.guards.values()][0].resends, 0);
 });
 
 test('a check gives way, right before each datagram, to a command clicked while it writes', async () => {

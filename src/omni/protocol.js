@@ -82,21 +82,6 @@ export const REQUESTS = {
       ['Recurring', 'bool', '0'],
     ]),
   }),
-  /** A group (theme): 0 off, 1 on. */
-  group: (id, on) => ({
-    type: MSG.RUN_GROUP,
-    body: request('RunGroupCmd', [
-      ['GroupID', 'int', whole(id)],
-      ['Data', 'int', whole(on, 1)],
-      ['IsCountDownTimer', 'bool', '0'],
-      ['StartTimeHours', 'int', '0'],
-      ['StartTimeMinutes', 'int', '0'],
-      ['EndTimeHours', 'int', '0'],
-      ['EndTimeMinutes', 'int', '0'],
-      ['DaysActive', 'int', '0'],
-      ['Recurring', 'bool', '0'],
-    ]),
-  }),
   /** A (virtual) heater: 0 off, 1 on. */
   heaterEnable: (bow, id, on) => ({
     type: MSG.SET_HEATER_ENABLE,

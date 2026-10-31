@@ -85,7 +85,7 @@ const esc = (t) => String(t).replace(/&/g, '&amp;').replace(/</g, '&lt;');
 
 export function configXml(s) {
   const relay = (r) =>
-    `<Relay><System-Id>${r.id}</System-Id><Name>${esc(r.name)}</Name><Type>${r.type}</Type><Function>RLY_ACCESSORY</Function></Relay>`;
+    `<Relay><System-Id>${r.id}</System-Id><Name>${esc(r.name)}</Name><Type>${r.type}</Type><Function>${r.fn ?? 'RLY_ACCESSORY'}</Function></Relay>`;
   const light = (l) =>
     `<ColorLogic-Light><System-Id>${l.id}</System-Id><Name>${esc(l.name)}</Name><Type>COLOR_LOGIC_UCL</Type></ColorLogic-Light>`;
   const bodies = s.bodies

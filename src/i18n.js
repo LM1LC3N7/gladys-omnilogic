@@ -118,6 +118,11 @@ export const T = {
   optionEquipment: both('pumps and relays', 'pompes et relais'),
   optionLights: both('lights', 'éclairages'),
   optionHeating: both('heating', 'chauffage'),
+  heldNote: (name) =>
+    both(
+      `${name}: the set point held by the controller is above what Gladys may write; turning heating (or its filter pump) on is refused until it is lowered.`,
+      `${name} : la consigne gardée par le contrôleur dépasse ce que Gladys peut écrire ; la mise en marche du chauffage (ou de sa pompe de filtration) est refusée tant qu'elle n'est pas baissée.`,
+    ),
   otherPanel: (names) =>
     both(
       `Another controller answers at this address: ${names} no longer read.`,
@@ -198,8 +203,8 @@ export const ERRORS = {
     "Le contrôleur de cette fonctionnalité n'est pas celui qui est lu : rien envoyé.",
   ),
   otherPanel: both(
-    'Another controller answers at this address, or its configuration changed: nothing sent (read again).',
-    'Un autre contrôleur répond à cette adresse, ou sa configuration a changé : rien envoyé (relu).',
+    'Another controller answers at this address, or its configuration changed: nothing sent; the controller and its configuration are read again in 5 s.',
+    'Un autre contrôleur répond à cette adresse, ou sa configuration a changé : rien envoyé ; le contrôleur et sa configuration sont relus dans 5 s.',
   ),
   unknownObject: both(
     'The controller does not show this equipment: nothing sent.',
@@ -223,6 +228,19 @@ export const ERRORS = {
       `Set point out of bounds: ${decimal(low, 'en')} to ${decimal(high, 'en')} °C. Nothing sent.`,
       `Consigne hors bornes : ${decimal(low, 'fr')} à ${decimal(high, 'fr')} °C. Rien envoyé.`,
     ),
+  heldUnreadable: both(
+    'The set point held by this heater (or its limits) cannot be read: turning heating on would resume it unchecked. Nothing sent.',
+    'La consigne gardée par ce chauffage (ou ses limites) ne peut pas être lue : la mise en marche la reprendrait sans contrôle. Rien envoyé.',
+  ),
+  heldAbove: (held, ceiling) =>
+    both(
+      `The heater holds a set point of ${decimal(held, 'en')} °C, above the ${decimal(ceiling, 'en')} °C Gladys may write: lower the set point first. Nothing sent.`,
+      `Le chauffage garde une consigne de ${decimal(held, 'fr')} °C, au-dessus des ${decimal(ceiling, 'fr')} °C que Gladys peut écrire : baissez d'abord la consigne. Rien envoyé.`,
+    ),
+  firePit: both(
+    'A fire pit is never lit from Gladys: nothing sent (turning it off works).',
+    "Un foyer n'est jamais allumé depuis Gladys : rien envoyé (l'extinction fonctionne).",
+  ),
   stopInProgress: both(
     'A heating stop of this body is in progress (not seen applied): nothing sent.',
     'Un arrêt du chauffage de ce bassin est en cours (pas encore vu appliqué) : rien envoyé.',

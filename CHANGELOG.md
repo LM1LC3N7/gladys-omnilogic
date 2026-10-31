@@ -25,4 +25,7 @@ the notes of the version's GitHub Release.
   behind three options, off by default; a spa never above 40 °C, a pool never
   above its ceiling (35 °C by default), on the whole °F written, within the
   heater's limits.
+- Turning a heater on (or a filter pump whose heater may heat) refused while
+  the set point the controller holds is above the bounds or unreadable.
+- A fire pit relay is never turned on; turning it off works.
 - "Test the connection" button, docs in English and French.

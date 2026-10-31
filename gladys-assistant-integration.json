@@ -67,8 +67,8 @@
         "fr": "Autoriser la mise en marche des pompes et relais"
       },
       "description": {
-        "en": "Off by default. On: Gladys may turn on the filter pumps, the other pumps and the relays (never the valves). Turning a filter pump on whose heater is not seen off also needs the heating option. Turning off works either way.",
-        "fr": "Désactivé par défaut. Activé : Gladys peut mettre en marche les pompes de filtration, les autres pompes et les relais (jamais les vannes). Mettre en marche une pompe de filtration dont le chauffage n'est pas vu arrêté exige aussi l'option chauffage. L'arrêt fonctionne dans les deux cas."
+        "en": "Off by default. On: Gladys may turn on the filter pumps, the other pumps and the relays (never the valves nor a fire pit). Turning a filter pump on whose heater is not seen off also needs the heating option, and that heater's held set point within its bounds. Turning off works either way.",
+        "fr": "Désactivé par défaut. Activé : Gladys peut mettre en marche les pompes de filtration, les autres pompes et les relais (jamais les vannes ni un foyer). Mettre en marche une pompe de filtration dont le chauffage n'est pas vu arrêté exige aussi l'option chauffage, et la consigne gardée par ce chauffage dans ses bornes. L'arrêt fonctionne dans les deux cas."
       },
       "required": false,
       "default": false
@@ -95,8 +95,8 @@
         "fr": "Autoriser le chauffage"
       },
       "description": {
-        "en": "Off by default. On: Gladys may turn a heater on and set its set point (a spa 40 °C at most, a pool the ceiling below, always within the limits of the heater). Turning a heater off works either way.",
-        "fr": "Désactivé par défaut. Activé : Gladys peut mettre un chauffage en marche et régler sa consigne (un spa 40 °C au plus, une piscine le plafond ci-dessous, toujours dans les limites du chauffage). Arrêter un chauffage fonctionne dans les deux cas."
+        "en": "Off by default. On: Gladys may turn a heater on and set its set point (a spa 40 °C at most, a pool the ceiling below, always within the limits of the heater). Turning a heater on is refused while the set point it holds is above these bounds. Turning a heater off works either way.",
+        "fr": "Désactivé par défaut. Activé : Gladys peut mettre un chauffage en marche et régler sa consigne (un spa 40 °C au plus, une piscine le plafond ci-dessous, toujours dans les limites du chauffage). La mise en marche est refusée tant que la consigne gardée dépasse ces bornes. Arrêter un chauffage fonctionne dans les deux cas."
       },
       "required": false,
       "default": false
@@ -172,8 +172,8 @@
         "fr": "Tester la connexion"
       },
       "description": {
-        "en": "Reads the controller once (never sooner than the refresh interval) and shows its state. Stops not yet seen applied are checked and written again first.",
-        "fr": "Lit le contrôleur une fois (jamais avant l'intervalle de rafraîchissement) et affiche son état. Les arrêts pas encore vus appliqués sont vérifiés et réécrits d'abord."
+        "en": "Reads the controller once (never sooner than the refresh interval) and shows its state. Stops not yet seen applied are checked first; those the controller never acked are written again at once.",
+        "fr": "Lit le contrôleur une fois (jamais avant l'intervalle de rafraîchissement) et affiche son état. Les arrêts pas encore vus appliqués sont vérifiés d'abord ; ceux que le contrôleur n'a jamais acquittés sont réécrits aussitôt."
       },
       "timeout_seconds": 30
     }

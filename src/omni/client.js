@@ -8,7 +8,7 @@
 //
 // A request (python-omnilogic-local 5.0.2, `api/protocol.py`): sent, then its
 // ack awaited (MSP_ACK carrying one of the message ids of this request); no
-// ack within 800 ms: sent again with a new id, until the timeout. A request
+// ack within 1.5 s: sent again with a new id, until the timeout. A request
 // with an answer (the telemetry, the configuration) then waits for it: one
 // message of the awaited type, or a lead message (that type, its size and
 // block count) and its blocks. Every message of the controller that is not an
@@ -223,7 +223,7 @@ export class PanelClient {
     });
   }
 
-  /** Sends the request (again every 800 ms without its ack), then waits for its answer. */
+  /** Sends the request (again every 1.5 s without its ack), then waits for its answer. */
   exchange(socket, { type, body }, { until, signal }) {
     const answerType = ANSWER_OF[type];
     return new Promise((resolve, reject) => {

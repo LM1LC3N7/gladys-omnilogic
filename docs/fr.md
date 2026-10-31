@@ -85,7 +85,9 @@ vérifié toutes les 15 s (chaque adresse à part) et à chaque lecture :
   et part en premier dès qu'une adresse est connue ;
 - **pas d'acquittement du contrôleur** (3 s d'essais, toutes les 250 ms) :
   réécrit à chaque vérification (15 s), à chaque lecture qui atteint le
-  contrôleur et quand vous cliquez sur **Tester la connexion** ; un arrêt
+  contrôleur et quand vous cliquez sur **Tester la connexion** (le bouton ne
+  réécrit que les arrêts jamais acquittés ; les autres gardent leurs 15 s) ;
+  un arrêt
   que le contrôleur n'a jamais acquitté n'est jamais tenu ni abandonné ;
 - **acquitté, pas appliqué** (la télémétrie ne le montre pas) : réécrit 15 s
   après chaque écriture, 3 fois au plus (écritures acquittées), puis tenu
@@ -118,10 +120,13 @@ Trois options, **désactivées par défaut** :
 - **Autoriser la mise en marche des pompes et relais** : pompes de
   filtration (à leur dernière vitesse quand elle est dans leurs limites,
   sinon leur maximum, comme l'application Hayward), autres pompes et
-  relais. Les vannes ne sont jamais commandées. Mettre en marche une pompe
-  de filtration dont le chauffage n'est pas vu arrêté (chauffage en marche,
-  réchauffeur encore allumé, ou illisible) exige aussi l'option chauffage :
-  l'eau qui circule peut lancer la chauffe.
+  relais. Les vannes ne sont jamais commandées, et un relais de foyer
+  (`RLY_FIREPIT`) n'est jamais allumé (l'extinction fonctionne). Mettre en
+  marche une pompe de filtration dont le chauffage n'est pas vu arrêté
+  (chauffage en marche, réchauffeur encore allumé, ou illisible) exige aussi
+  l'option chauffage, et la consigne que garde ce chauffage doit être dans
+  les bornes ci-dessous (sinon refus : baissez-la d'abord) : l'eau qui
+  circule peut lancer la chauffe.
 - **Autoriser l'allumage des éclairages** (éclairages ColorLogic, sur leur
   dernier spectacle).
 - **Autoriser le chauffage** : mettre un chauffage en marche, régler sa
@@ -129,7 +134,11 @@ Trois options, **désactivées par défaut** :
   (65–104 °F), dans les limites du chauffage lues dans sa configuration
   (jamais écrite quand elles sont illisibles), un **spa à 40 °C au plus**
   (104 °F), une piscine au plus au plafond de la configuration (35 °C par
-  défaut, de 20 à 40 °C, converti en °F arrondi vers le bas).
+  défaut, de 20 à 40 °C, converti en °F arrondi vers le bas). Mettre un
+  chauffage en marche reprend la consigne que garde le contrôleur (laissée
+  par l'application Hayward, l'écran ou une programmation) : c'est refusé
+  quand cette consigne dépasse ces bornes ou ne peut pas être lue, et l'état
+  de l'intégration le dit ; baissez d'abord la consigne.
 
 Ce sont des listes et une consigne, jamais un interrupteur : un « tout
 éteindre » ne les atteint jamais. Chaque commande relit la télémétrie juste
@@ -140,10 +149,20 @@ appliqué » sinon, puis relectures à 5 et 20 s). Les commandes arrivées
 ensemble (une scène) partent l'une après l'autre dans un même tour. Aussi
 refusées : avant la lecture de la configuration de l'intégration ou du
 contrôleur, quand un autre contrôleur répond à l'adresse ou que sa
-configuration a changé, quand le contrôleur est en mode service ou
+configuration a changé (tous deux relus 5 s plus tard), quand le contrôleur est en mode service ou
 configuration, ou quand un arrêt a été cliqué entre-temps.
 
 ## Bon à savoir
+
+- Arrêter une pompe de filtration laisse son chauffage activé, comme
+  l'application Hayward : c'est le contrôleur qui coupe la chauffe sans
+  débit (refroidissement, vitesse minimale du réchauffeur), et la chauffe
+  reprend quand une programmation relance la pompe. Arrêtez aussi le
+  chauffage pour cesser de chauffer.
+- Un acquittement est attendu 1,5 s avant de renvoyer une requête (la
+  référence attend 4 s) : sur un contrôleur plus lent, une scène de
+  plusieurs réglages peut en laisser certains non envoyés (« rien envoyé »,
+  jamais envoyés en retard).
 
 - Le contrôleur n'est jamais lu avant l'intervalle : ni par le bouton
   **Tester la connexion**, ni par une Découverte, une reconnexion à Gladys
