@@ -56,6 +56,17 @@ up to date at the end of every milestone.
 
 ## Decisions
 
+- **Review r2 (2026-10-31)**: I1 the FIFO test of `test/store.test.js` bounds
+  each /data call (2 s) and wakes a blocked reader in a `finally` (an open
+  `O_WRONLY|O_NONBLOCK`, then closed) before the folder is removed: under
+  M33 (no `O_NONBLOCK`) the suite fails in 4 s and exits; the CI jobs have
+  `timeout-minutes: 15`. Other waits checked: the hung stores of the tests
+  are plain promises (no handle), plain-file loads never block. m1 a filter
+  pump without the heating option is refused for the option first, then for
+  the held set point. m2 a broken wrap in `docs/fr.md`. Reviewer mutants
+  replayed one at a time: 75 killed, M31 and M46 equivalent; N2 (moved code)
+  run by hand on its new line: killed. s10-c kept documented.
+
 - **Review r1 (2026-10-31)**: I1 turning a heater on, or a filter pump whose
   heater may heat, resumes the set point the controller holds: refused when
   it is unreadable (or the heater's limits are) or above the highest whole

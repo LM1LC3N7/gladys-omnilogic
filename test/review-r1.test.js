@@ -215,3 +215,12 @@ test('I1: the held set point bound is the one of a write (ceiling rounded down, 
   // A spa: 104 °F (40 °C) may be resumed.
   assert.equal(heldSetpointProblem(heater(104), 40), undefined);
 });
+
+test('r2 m1: a filter pump without the heating option says the option first, before the held set point', async () => {
+  const t = await setup({ config: { ...ALLOW, allow_heating: false, max_pool_setpoint: 30 } });
+  t.panel.state.filters[0].state = 0;
+  pool(t).enable = 1;
+  pool(t).setpoint = 100;
+  await t.advance(31 * SECOND, 100);
+  refused(await t.press('onoff-1_3', 'on'), /chauffage doit aussi/);
+});

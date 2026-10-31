@@ -87,8 +87,8 @@ vérifié toutes les 15 s (chaque adresse à part) et à chaque lecture :
   réécrit à chaque vérification (15 s), à chaque lecture qui atteint le
   contrôleur et quand vous cliquez sur **Tester la connexion** (le bouton ne
   réécrit que les arrêts jamais acquittés ; les autres gardent leurs 15 s) ;
-  un arrêt
-  que le contrôleur n'a jamais acquitté n'est jamais tenu ni abandonné ;
+  un arrêt que le contrôleur n'a jamais acquitté n'est jamais tenu ni
+  abandonné ;
 - **acquitté, pas appliqué** (la télémétrie ne le montre pas) : réécrit 15 s
   après chaque écriture, 3 fois au plus (écritures acquittées), puis tenu
   sans nouvelle écriture, ce que dit l'état de l'intégration ;

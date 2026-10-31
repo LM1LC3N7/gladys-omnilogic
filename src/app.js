@@ -1372,13 +1372,16 @@ export class OmniLogicApp {
           return { refuse: ERRORS.stopInProgress };
         }
         heats = mayHeat(heater) && Boolean(heater);
-        // Its heater may resume the set point it holds: bounded like a write.
-        const held = heats ? this.heldProblem(heater, objects) : undefined;
-        if (held) return { refuse: held };
       }
       const options = this.optionsFor(entry, object, heats);
       const refused = this.admit(entry, options);
       if (refused) return { refuse: refused };
+      if (heats) {
+        // Its heater may resume the set point it holds: bounded like a write
+        // (after the options: a missing option is said first).
+        const held = this.heldProblem(heaterOfBody(object.bow, objects), objects);
+        if (held) return { refuse: held };
+      }
       if (
         object.values.STATUS === ON &&
         !this.isPending(entry.obj, entry.attr) &&

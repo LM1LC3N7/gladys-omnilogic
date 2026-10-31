@@ -69,6 +69,26 @@ test('stops: only offs, repaired, deduplicated; unreadable counts are 0', () => 
   });
 });
 
+/** `promise`, or a failure after `ms` (a regression that blocks never holds the runner). */
+function within(promise, ms, what) {
+  let timer;
+  const late = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${what} blocked`)), ms);
+    timer.unref();
+  });
+  return Promise.race([promise, late]).finally(() => clearTimeout(timer));
+}
+
+/** Wakes a reader blocked on a FIFO (a writer opens and closes it), never blocking itself. */
+async function release(fifo) {
+  try {
+    const handle = await open(fifo, constants.O_WRONLY | constants.O_NONBLOCK);
+    await handle.close();
+  } catch {
+    // No reader waiting (ENXIO) or gone: nothing to release.
+  }
+}
+
 test('the file: 0600, unreadable is not empty; a FIFO never blocks', async (t) => {
   const dir = await mkdtemp(join(tmpdir(), 'omni-store-'));
   t.after(() => rm(dir, { recursive: true, force: true }));
@@ -86,12 +106,18 @@ test('the file: 0600, unreadable is not empty; a FIFO never blocks', async (t) =
   execFileSync('mkfifo', [fifo]);
   execFileSync('mkfifo', [`${fifo}.tmp`]);
   const special = fileStore(fifo);
-  assert.deepEqual(await special.load(), { unreadable: true });
-  // A FIFO holding JSON (a writer behind it): still never read.
-  const writer = await open(fifo, constants.O_RDWR | constants.O_NONBLOCK);
-  await writer.write('{"x":1}');
-  assert.deepEqual(await special.load(), { unreadable: true });
-  await writer.close();
-  await special.save({ b: 2 });
-  assert.deepEqual(await special.load(), { data: { b: 2 } });
+  // Released before the folder is removed (this runs before the t.after above).
+  try {
+    assert.deepEqual(await within(special.load(), 2000, '/data load'), { unreadable: true });
+    // A FIFO holding JSON (a writer behind it): still never read.
+    const writer = await open(fifo, constants.O_RDWR | constants.O_NONBLOCK);
+    await writer.write('{"x":1}');
+    assert.deepEqual(await within(special.load(), 2000, '/data load'), { unreadable: true });
+    await writer.close();
+    await within(special.save({ b: 2 }), 2000, '/data save');
+    assert.deepEqual(await within(special.load(), 2000, '/data load'), { data: { b: 2 } });
+  } finally {
+    await release(fifo);
+    await release(`${fifo}.tmp`);
+  }
 });
