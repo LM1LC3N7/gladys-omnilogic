@@ -166,3 +166,10 @@ up to date at the end of every milestone.
   as unreadable through the positional read or the JSON; the guard stays).
 - **Test files**: `test/kit/` holds gladys-testkit files as is (excluded from
   Prettier).
+
+## Next patch
+
+- r3 m1 (`test/store.test.js:83-90`): the FIFO release opens with `O_WRONLY|O_NONBLOCK`, which cannot wake a save
+  blocked on the `.tmp` FIFO (mutant S1 hangs the process). Open with `O_RDWR|O_NONBLOCK` instead.
+- r3 m2 (`test/realclock.test.js:38-52`): a `start()` that never finishes skips the `finally`, so the fake
+  controller socket and timers keep the process alive after the 60 s timeout. Move the cleanup into `t.after`.
