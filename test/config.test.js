@@ -1,33 +1,52 @@
+// -----------------------------------------------------------------------------
+// The configuration: addresses checked, options strictly true, the pool
+// ceiling bounded (40 °C at most, rounded down).
+// -----------------------------------------------------------------------------
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { normalizeConfig, DEFAULT_CONFIG } from '../src/config.js';
+import { normalizeConfig, parseAddress } from '../src/config.js';
 
-test('normalizeConfig returns the defaults when called with no argument', () => {
-  assert.deepEqual(normalizeConfig(), DEFAULT_CONFIG);
+test('addresses: IPv4 or host name, port 10444 by default; never broadcast, multicast, any', () => {
+  assert.deepEqual(parseAddress('192.168.1.60'), { host: '192.168.1.60', port: 10444 });
+  assert.deepEqual(parseAddress(' Omni.local:7000 '), { host: 'omni.local', port: 7000 });
+  for (const bad of [
+    '',
+    '0.0.0.0',
+    '255.255.255.255',
+    '224.0.0.1',
+    '239.1.2.3',
+    '1.2.3',
+    'a b',
+    'x\r\ny',
+    'http://x',
+    'user@x',
+    'x:0',
+    'x:70000',
+    '-x.local',
+  ]) {
+    assert.equal(parseAddress(bad), undefined, bad);
+  }
 });
 
-test('normalizeConfig keeps user values over the defaults', () => {
-  const config = normalizeConfig({ latitude: 45.5, longitude: -73.6, unit: 'fahrenheit' });
-  assert.equal(config.latitude, 45.5);
-  assert.equal(config.longitude, -73.6);
-  assert.equal(config.unit, 'fahrenheit');
+test('options: only true allows; off by default', () => {
+  const c = normalizeConfig({});
+  assert.equal(c.allowEquipment, false);
+  assert.equal(c.allowLights, false);
+  assert.equal(c.allowHeating, false);
+  assert.equal(normalizeConfig({ allow_heating: 'yes' }).allowHeating, false);
+  assert.equal(normalizeConfig({ allow_heating: 'true' }).allowHeating, true);
+  assert.equal(normalizeConfig({ allow_equipment: 1 }).allowEquipment, false);
 });
 
-test('normalizeConfig coerces numeric strings coming from a form', () => {
-  const config = normalizeConfig({ latitude: '48.8', longitude: '2.3', poll_frequency: '600' });
-  assert.equal(config.latitude, 48.8);
-  assert.equal(config.longitude, 2.3);
-  assert.equal(config.poll_frequency, 600);
-  assert.equal(typeof config.poll_frequency, 'number');
-});
-
-test('normalizeConfig falls back to the default for a missing numeric field', () => {
-  const config = normalizeConfig({ unit: 'celsius' });
-  assert.equal(config.poll_frequency, DEFAULT_CONFIG.poll_frequency);
-});
-
-test('GLADYS_PREFER_LOCAL defaults to true and only an explicit false disables it', () => {
-  assert.equal(normalizeConfig().GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: true }).GLADYS_PREFER_LOCAL, true);
-  assert.equal(normalizeConfig({ GLADYS_PREFER_LOCAL: false }).GLADYS_PREFER_LOCAL, false);
+test('the pool ceiling: 35 °C by default, 20 to 40, rounded down; the interval bounded', () => {
+  assert.equal(normalizeConfig({}).poolCeiling, 35);
+  assert.equal(normalizeConfig({ max_pool_setpoint: 45 }).poolCeiling, 40);
+  assert.equal(normalizeConfig({ max_pool_setpoint: 10 }).poolCeiling, 20);
+  assert.equal(normalizeConfig({ max_pool_setpoint: 32.9 }).poolCeiling, 32);
+  assert.equal(normalizeConfig({ max_pool_setpoint: '' }).poolCeiling, 35);
+  assert.equal(normalizeConfig({ max_pool_setpoint: true }).poolCeiling, 35);
+  assert.equal(normalizeConfig({ poll_interval: 1 }).pollInterval, 15);
+  assert.equal(normalizeConfig({ poll_interval: 'x' }).pollInterval, 30);
+  assert.equal(normalizeConfig({ language: 'de' }).language, 'fr');
 });

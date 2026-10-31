@@ -1,67 +1,158 @@
-# Template de démonstration
+# Hayward OmniLogic pour Gladys
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Affiche votre contrôleur de piscine **Hayward OmniLogic** dans Gladys par
+son **protocole local** (UDP, port 10444) : sans cloud, sans compte,
+directement sur votre réseau.
+
+> **Jamais testé avec un vrai contrôleur.** Sans lien avec Hayward.
+> L'intégration suit la bibliothèque python-omnilogic-local (Apache-2.0) et
+> les captures de vrais contrôleurs qu'elle publie. Une mise à jour du
+> micrologiciel du contrôleur peut changer le protocole. Le cloud Hayward
+> (compte de l'application OmniLogic) n'est pas utilisé.
 
 ## Ce que vous obtenez
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+Un appareil par contrôleur, avec, pour chaque équipement que montre sa
+configuration :
 
-## Configuration
+| Équipement             | Fonctionnalités                                              |
+| ---------------------- | ------------------------------------------------------------ |
+| Extérieur              | Température de l'air                                         |
+| Bassin (piscine, spa)  | Température de l'eau                                         |
+| Chauffage d'un bassin  | Chauffage (liste marche / arrêt), consigne, chauffe en cours |
+| Pompe de filtration    | Marche / arrêt (liste), vitesse (%), puissance (W)           |
+| Autre pompe            | Marche / arrêt (liste), vitesse (%)                          |
+| Relais (pas une vanne) | Marche / arrêt (liste)                                       |
+| Éclairage ColorLogic   | Marche / arrêt (liste)                                       |
+| Électrolyseur au sel   | Sel (ppm, moyenne)                                           |
+| pH / redox (CSAD)      | pH, redox (mV)                                               |
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+Plus une fonctionnalité **État** (connecté ou injoignable). Les vannes
+motorisées, les groupes (thèmes), les spectacles de lumière, les vitesses
+des pompes, les réglages de l'électrolyseur, le débordement et les
+programmations ne sont pas affichés dans cette version.
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+- Le protocole parle en °F quelle que soit l'unité d'affichage du
+  contrôleur : chaque température est convertie exactement en °C
+  ((°F − 32) × 5 / 9). Un capteur configuré dans une autre unité n'est pas
+  publié.
+- Une température d'eau de −1 (pas de débit, pas de sonde), un sel ou un pH
+  à 0, un état que l'intégration ne connaît pas : jamais publiés.
+- Le volume d'un bassin (en gallons dans la configuration) n'est pas publié.
 
-## Actions
+**Identité.** Le protocole ne donne ni numéro de série ni adresse MAC.
+L'appareil est identifié par les numéros système et les types des bassins
+du contrôleur (une empreinte), jamais par son adresse IP : il survit aux
+redémarrages, aux mises à jour et aux changements de nom, mais ajouter ou
+retirer un bassin dans la configuration du contrôleur crée un nouvel
+appareil. Avant chaque commande (jamais avant un arrêt), l'intégration
+vérifie que la télémétrie qu'elle vient de lire appartient à la
+configuration qu'elle connaît (même somme de contrôle, mêmes bassins) ;
+sinon rien n'est envoyé et la configuration est relue.
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+Lecture toutes les 30 secondes par défaut (de 15 s à 10 min, réglable) : la
+télémétrie à chaque lecture, la configuration seulement au démarrage et
+quand sa somme de contrôle change. Une requête à la fois, chacune sur une
+nouvelle socket UDP.
 
-## Scènes
+## Installation
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+1. Donnez une adresse IP fixe au contrôleur dans votre box.
+2. Dans Gladys, installez l'intégration et saisissez l'adresse IP du
+   contrôleur (ou son nom d'hôte, éventuellement suivi d'un port).
+3. Enregistrez, puis ajoutez le contrôleur depuis l'onglet **Découverte**.
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+Le contrôleur n'a pas d'identifiants : rien de secret n'est configuré.
 
-## Tableau de bord
+## Arrêter (toujours possible)
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+Choisir **Arrêt** sur une pompe, un relais ou un éclairage, ou **Arrêt** sur
+un chauffage, ne dépend d'aucune option, ni d'une lecture ou d'une commande
+en cours (il les interrompt et part sur une nouvelle socket), ni d'une
+lecture en échec, ni de l'identité du contrôleur, ni de la configuration :
+juste après un redémarrage, il part vers l'adresse du dernier contrôleur lu
+(gardée dans `/data`), et un arrêt pas encore vu appliqué avant un
+redémarrage est renvoyé dès le démarrage du conteneur. Une commande arrivée
+avant lui et pas encore partie est abandonnée.
 
-## Dépannage
+Il réussit quand la télémétrie relue le montre : l'équipement arrêté, ou le
+chauffage arrêté **et** aucun réchauffeur de son bassin encore allumé.
+Sinon la réponse dit pourquoi, et l'arrêt est gardé (dans `/data`) et
+vérifié toutes les 15 s (chaque adresse à part) et à chaque lecture :
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **aucune adresse connue** (pas de configuration, aucun contrôleur lu
+  avant) : rien n'est envoyé pour le moment ; l'arrêt est gardé en mémoire
+  et part en premier dès qu'une adresse est connue ;
+- **pas d'acquittement du contrôleur** (3 s d'essais, toutes les 250 ms) :
+  réécrit à chaque vérification (15 s), à chaque lecture qui atteint le
+  contrôleur et quand vous cliquez sur **Tester la connexion** ; un arrêt
+  que le contrôleur n'a jamais acquitté n'est jamais tenu ni abandonné ;
+- **acquitté, pas appliqué** (la télémétrie ne le montre pas) : réécrit 15 s
+  après chaque écriture, 3 fois au plus (écritures acquittées), puis tenu
+  sans nouvelle écriture, ce que dit l'état de l'intégration ;
+- **affiché arrêté mais encore en fin de marche** (une pompe de filtration
+  en refroidissement ou en attente d'arrêt, un réchauffeur encore allumé) :
+  surveillé, rien n'est réécrit ; après 10 minutes l'état vous demande de
+  vérifier sur le contrôleur ; quand les réchauffeurs ne peuvent pas être
+  lus (configuration pas encore lue), l'état le dit.
+
+L'état de l'intégration dit où en est chaque arrêt. Quand le même
+contrôleur répond à une nouvelle adresse, ses arrêts gardés le suivent.
+
+Un arrêt gardé est abandonné quand le contrôleur le montre, ou quand une
+commande du même réglage cliquée dans Gladys après lui (option activée) est
+partie (acquittée, ou envoyée sans acquittement : elle a pu être appliquée).
+Un nouveau clic sur Arrêt le réécrit et recompte ses écritures. Un arrêt
+gardé dans `/data` avant un redémarrage est abandonné de même, sans être
+envoyé, quand une telle commande de son réglage est partie depuis le
+démarrage (un `/data` lent à lire est appliqué quand sa lecture se termine).
+Jamais par le temps. Une commande partie moins de 30 s avant l'arrêt et
+arrivée après lui est contrée par une nouvelle écriture. Tant que l'arrêt
+du chauffage d'un bassin n'est pas vu appliqué, sa consigne et la mise en
+marche de sa pompe de filtration sont refusées.
+
+## Mettre en marche et chauffer (options)
+
+Trois options, **désactivées par défaut** :
+
+- **Autoriser la mise en marche des pompes et relais** : pompes de
+  filtration (à leur dernière vitesse quand elle est dans leurs limites,
+  sinon leur maximum, comme l'application Hayward), autres pompes et
+  relais. Les vannes ne sont jamais commandées. Mettre en marche une pompe
+  de filtration dont le chauffage n'est pas vu arrêté (chauffage en marche,
+  réchauffeur encore allumé, ou illisible) exige aussi l'option chauffage :
+  l'eau qui circule peut lancer la chauffe.
+- **Autoriser l'allumage des éclairages** (éclairages ColorLogic, sur leur
+  dernier spectacle).
+- **Autoriser le chauffage** : mettre un chauffage en marche, régler sa
+  consigne. La valeur écrite est un °F entier dans la plage du protocole
+  (65–104 °F), dans les limites du chauffage lues dans sa configuration
+  (jamais écrite quand elles sont illisibles), un **spa à 40 °C au plus**
+  (104 °F), une piscine au plus au plafond de la configuration (35 °C par
+  défaut, de 20 à 40 °C, converti en °F arrondi vers le bas).
+
+Ce sont des listes et une consigne, jamais un interrupteur : un « tout
+éteindre » ne les atteint jamais. Chaque commande relit la télémétrie juste
+avant (identité, mode service, l'équipement), revérifie les options juste
+avant son datagramme, part sous 3,5 s ou pas du tout, et ne réussit que si
+la télémétrie relue montre la valeur demandée (« envoyé, pas encore
+appliqué » sinon, puis relectures à 5 et 20 s). Les commandes arrivées
+ensemble (une scène) partent l'une après l'autre dans un même tour. Aussi
+refusées : avant la lecture de la configuration de l'intégration ou du
+contrôleur, quand un autre contrôleur répond à l'adresse ou que sa
+configuration a changé, quand le contrôleur est en mode service ou
+configuration, ou quand un arrêt a été cliqué entre-temps.
+
+## Bon à savoir
+
+- Le contrôleur n'est jamais lu avant l'intervalle : ni par le bouton
+  **Tester la connexion**, ni par une Découverte, une reconnexion à Gladys
+  ou un redémarrage (l'heure de la dernière lecture est gardée dans
+  `/data`). Seules les relectures qui suivent une commande ou un clic sur
+  Arrêt (5 et 20 s) et les vérifications d'un arrêt gardé (toutes les 15 s)
+  font exception.
+- Une valeur de plus de 2 minutes n'est jamais renvoyée comme nouvelle.
+- Les réponses sont bornées : un datagramme de 64 Kio, une réponse de 1 Mio
+  (4 Mio une fois décompressée), 256 blocs, 3 s entre deux blocs.
+- L'application Hayward, l'écran du contrôleur et ses programmations
+  peuvent aussi le commander : la dernière commande l'emporte.

@@ -1,177 +1,181 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Hayward OmniLogic",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Hayward OmniLogic pool controllers on the local network: pumps, heating, lights, water.",
+    "fr": "Contrôleurs de piscine Hayward OmniLogic en local : pompes, chauffage, éclairage, eau."
   },
-  "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "version": "0.1.0",
+  "docker_image": "ghcr.io/lm1lc3n7/gladys-omnilogic:0.1.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
-  "transports": ["local", "cloud"],
+  "cover_image": "https://raw.githubusercontent.com/LM1LC3N7/gladys-omnilogic/main/cover.png",
+  "categories": ["appliances", "environment"],
+  "transports": ["local"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your OmniLogic controller",
+        "fr": "Votre contrôleur OmniLogic"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Shows your Hayward OmniLogic pool controller in Gladys through its local protocol (UDP port 10444), without any cloud: bodies of water (pool, spa) with their water temperature, heaters with their set point, filter pumps, pumps, relays, ColorLogic lights, salt chlorinator and pH/ORP. Enter the IP address of the controller (give it a fixed address in your router), save, then add it from the Discovery tab. Turning equipment or a heater off always works; turning things on and heating are only allowed by the options below. Never tested with a real controller. Not affiliated with Hayward.",
+        "fr": "Affiche votre contrôleur de piscine Hayward OmniLogic dans Gladys par son protocole local (port UDP 10444), sans cloud : bassins (piscine, spa) avec température de l'eau, chauffages et leur consigne, pompes de filtration, pompes, relais, éclairages ColorLogic, électrolyseur et pH/redox. Saisissez l'adresse IP du contrôleur (donnez-lui une adresse fixe dans votre box), enregistrez, puis ajoutez-le depuis l'onglet Découverte. Arrêter un équipement ou un chauffage fonctionne toujours ; mettre en marche et chauffer ne sont permis que par les options ci-dessous. Jamais testé avec un vrai contrôleur. Sans lien avec Hayward."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://github.com/LM1LC3N7/gladys-omnilogic/blob/main/docs/fr.md",
+          "label": {
+            "en": "Guide (French)",
+            "fr": "Guide (français)"
+          }
+        },
+        {
+          "url": "https://github.com/LM1LC3N7/gladys-omnilogic/blob/main/docs/en.md",
+          "label": {
+            "en": "Guide (English)",
+            "fr": "Guide (anglais)"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "host",
+      "type": "string",
+      "label": {
+        "en": "IP address of the controller",
+        "fr": "Adresse IP du contrôleur"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
+      "description": {
+        "en": "An IPv4 address or a host name, optionally followed by a port (10444 by default).",
+        "fr": "Une adresse IPv4 ou un nom d'hôte, éventuellement suivi d'un port (10444 par défaut)."
+      },
+      "placeholder": {
+        "en": "192.168.1.60",
+        "fr": "192.168.1.60"
+      },
       "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "default": ""
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "allow_equipment",
+      "type": "boolean",
+      "label": {
+        "en": "Allow turning pumps and relays on",
+        "fr": "Autoriser la mise en marche des pompes et relais"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "Off by default. On: Gladys may turn on the filter pumps, the other pumps and the relays (never the valves). Turning a filter pump on whose heater is not seen off also needs the heating option. Turning off works either way.",
+        "fr": "Désactivé par défaut. Activé : Gladys peut mettre en marche les pompes de filtration, les autres pompes et les relais (jamais les vannes). Mettre en marche une pompe de filtration dont le chauffage n'est pas vu arrêté exige aussi l'option chauffage. L'arrêt fonctionne dans les deux cas."
+      },
+      "required": false,
+      "default": false
     },
     {
-      "key": "unit",
+      "key": "allow_lights",
+      "type": "boolean",
+      "label": {
+        "en": "Allow turning lights on",
+        "fr": "Autoriser l'allumage des éclairages"
+      },
+      "description": {
+        "en": "Off by default. On: Gladys may turn on the ColorLogic lights. Turning off works either way.",
+        "fr": "Désactivé par défaut. Activé : Gladys peut allumer les éclairages ColorLogic. L'extinction fonctionne dans les deux cas."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "allow_heating",
+      "type": "boolean",
+      "label": {
+        "en": "Allow heating",
+        "fr": "Autoriser le chauffage"
+      },
+      "description": {
+        "en": "Off by default. On: Gladys may turn a heater on and set its set point (a spa 40 °C at most, a pool the ceiling below, always within the limits of the heater). Turning a heater off works either way.",
+        "fr": "Désactivé par défaut. Activé : Gladys peut mettre un chauffage en marche et régler sa consigne (un spa 40 °C au plus, une piscine le plafond ci-dessous, toujours dans les limites du chauffage). Arrêter un chauffage fonctionne dans les deux cas."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "max_pool_setpoint",
+      "type": "number",
+      "label": {
+        "en": "Ceiling of the pool set point (°C)",
+        "fr": "Plafond de la consigne de la piscine (°C)"
+      },
+      "description": {
+        "en": "The highest heating set point Gladys may write for a pool (35 °C by default, 20 to 40 °C). A spa is always limited to 40 °C. Checked on the whole °F written (the controller speaks °F).",
+        "fr": "La consigne de chauffage la plus haute que Gladys peut écrire pour une piscine (35 °C par défaut, de 20 à 40 °C). Un spa est toujours limité à 40 °C. Vérifié sur le degré °F entier écrit (le contrôleur parle en °F)."
+      },
+      "required": false,
+      "default": 35,
+      "min": 20,
+      "max": 40
+    },
+    {
+      "key": "poll_interval",
+      "type": "number",
+      "label": {
+        "en": "Refresh interval (s)",
+        "fr": "Intervalle de rafraîchissement (s)"
+      },
+      "description": {
+        "en": "How often the controller is read, in seconds.",
+        "fr": "Fréquence de lecture du contrôleur, en secondes."
+      },
+      "required": false,
+      "default": 30,
+      "min": 15,
+      "max": 600
+    },
+    {
+      "key": "language",
       "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
-      "required": false,
-      "default": "celsius",
-      "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
-      ]
-    },
-    {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "label": {
+        "en": "Language of the feature names",
+        "fr": "Langue des noms des fonctionnalités"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Used for the feature names of the devices added from now on, for the status texts and for the command errors.",
+        "fr": "Sert aux noms des fonctionnalités des appareils ajoutés désormais, aux textes d'état et aux erreurs des commandes."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "fr",
+          "label": {
+            "en": "French",
+            "fr": "Français"
+          }
+        },
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "Anglais"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion"
+      },
+      "description": {
+        "en": "Reads the controller once (never sooner than the refresh interval) and shows its state. Stops not yet seen applied are checked and written again first.",
+        "fr": "Lit le contrôleur une fois (jamais avant l'intervalle de rafraîchissement) et affiche son état. Les arrêts pas encore vus appliqués sont vérifiés et réécrits d'abord."
+      },
       "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
-    }
-  ],
-  "scene_triggers": [
-    {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
-      "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
-      },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
-        }
-      ],
-      "variables": [
-        {
-          "key": "target",
-          "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
-        }
-      ]
-    }
-  ],
-  "scene_actions": [
-    {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
-      },
-      "timeout_seconds": 15,
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ],
-      "outputs": [
-        {
-          "key": "signalled",
-          "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
-        }
-      ]
-    }
-  ],
-  "widgets": [
-    {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
-      },
-      "icon": "activity",
-      "action_timeout_seconds": 15
     }
   ]
 }
